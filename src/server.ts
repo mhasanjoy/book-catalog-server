@@ -32,8 +32,14 @@ async function run() {
     const bookCollection = db.collection("books");
 
     // API endpoints
+    app.post("/books", async (req: Request, res: Response) => {
+      const book = req.body;
+
+      const result = await bookCollection.insertOne(book);
+
+      res.send(result);
+    });
   } finally {
-    await client.close();
   }
 }
 
@@ -42,7 +48,7 @@ run().catch((error) => {
 });
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hello World!");
+  res.send("Welcome to Book Catalog!");
 });
 
 app.listen(PORT, () => {
