@@ -34,8 +34,21 @@ async function run() {
     // API endpoints
     app.post("/books", async (req: Request, res: Response) => {
       const book = req.body;
-
       const result = await bookCollection.insertOne(book);
+
+      res.send(result);
+    });
+
+    app.get("/books", async (req, res) => {
+      const books = bookCollection.find({});
+      const result = await books.toArray();
+
+      res.send(result);
+    });
+
+    app.get("/recently-added-books", async (req, res) => {
+      const books = bookCollection.find({}).sort({ _id: -1 }).limit(10);
+      const result = await books.toArray();
 
       res.send(result);
     });
