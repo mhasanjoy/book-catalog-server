@@ -40,7 +40,32 @@ async function run() {
     });
 
     app.get("/books", async (req, res) => {
-      const books = bookCollection.find({});
+      const { search } = req.query;
+
+      const searchConditions = {
+        $or: [
+          {
+            title: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            author: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            genre: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+        ],
+      };
+
+      const books = bookCollection.find(searchConditions);
       const result = await books.toArray();
 
       res.send(result);
