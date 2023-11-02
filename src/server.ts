@@ -1,7 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { Application, Request, Response } from "express";
-import { Db, MongoClient, ServerApiVersion } from "mongodb";
+import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import morgan from "morgan";
 
 dotenv.config();
@@ -74,6 +74,13 @@ async function run() {
     app.get("/recently-added-books", async (req, res) => {
       const books = bookCollection.find({}).sort({ _id: -1 }).limit(10);
       const result = await books.toArray();
+
+      res.send(result);
+    });
+
+    app.get("/books/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await bookCollection.findOne({ _id: new ObjectId(id) });
 
       res.send(result);
     });
