@@ -40,32 +40,48 @@ async function run() {
     });
 
     app.get("/books", async (req, res) => {
-      const { search } = req.query;
+      const { search, genre, publicationYear } = req.query;
 
-      const searchConditions = {
-        $or: [
-          {
-            title: {
-              $regex: search,
-              $options: "i",
-            },
-          },
-          {
-            author: {
-              $regex: search,
-              $options: "i",
-            },
-          },
-          {
-            genre: {
-              $regex: search,
-              $options: "i",
-            },
-          },
-        ],
-      };
+      const andConditions: Record<string, unknown>[] = [];
 
-      const books = bookCollection.find(searchConditions);
+      if (search) {
+        andConditions.push({
+          $or: ["title", "author", "genre"].map((field) => {
+            return {
+              [field]: {
+                $regex: search,
+                $options: "i",
+              },
+            };
+          }),
+        });
+      }
+
+      const filterConditions: Record<string, unknown>[] = [];
+      if (genre) {
+        filterConditions.push({
+          genre: {
+            $regex: genre,
+          },
+        });
+      }
+      if (publicationYear) {
+        filterConditions.push({
+          publicationDate: {
+            $regex: publicationYear,
+          },
+        });
+      }
+
+      if (filterConditions.length) {
+        andConditions.push({
+          $and: filterConditions,
+        });
+      }
+
+      const whereConditions = andConditions.length ? { $and: andConditions } : {};
+
+      const books = bookCollection.find(whereConditions);
       const result = await books.toArray();
 
       res.send(result);
