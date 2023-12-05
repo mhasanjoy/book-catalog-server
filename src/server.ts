@@ -131,6 +131,21 @@ async function run() {
 
       res.json({ message: "Review added successfully" });
     });
+
+    app.get("/reviews/:id", async (req, res) => {
+      const bookId = req.params.id;
+
+      const result = await bookCollection.findOne(
+        { _id: new ObjectId(bookId) },
+        { projection: { _id: 0, reviews: 1 } }
+      );
+
+      if (result) {
+        res.json(result);
+      } else {
+        res.status(404).json({ error: "Book not found" });
+      }
+    });
   } finally {
   }
 }
