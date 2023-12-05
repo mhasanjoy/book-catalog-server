@@ -117,6 +117,20 @@ async function run() {
 
       res.send(result);
     });
+
+    app.post("/reviews/:id", async (req, res) => {
+      const bookId = req.params.id;
+      const review = req.body.review;
+
+      const result = await bookCollection.updateOne({ _id: new ObjectId(bookId) }, { $push: { reviews: review } });
+
+      if (result.modifiedCount !== 1) {
+        res.json({ error: "Book not found or review not added" });
+        return;
+      }
+
+      res.json({ message: "Review added successfully" });
+    });
   } finally {
   }
 }
