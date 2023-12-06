@@ -1,7 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { Application, Request, Response } from "express";
-import { Db, MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import { Db, InsertOneResult, MongoClient, ObjectId, ServerApiVersion, UpdateResult } from "mongodb";
 import morgan from "morgan";
 
 dotenv.config();
@@ -30,6 +30,7 @@ async function run() {
     // Database Collection
     const db: Db = client.db(DATABASE_NAME);
     const bookCollection = db.collection("books");
+    const userCollection = db.collection("users");
 
     // API endpoints
     app.post("/books", async (req: Request, res: Response) => {
@@ -145,6 +146,35 @@ async function run() {
       } else {
         res.status(404).json({ error: "Book not found" });
       }
+    });
+
+    app.post("/users/:email", async (req, res) => {
+      const { email } = req.params;
+      const { book, status } = req.body;
+      let result: UpdateResult<Document> | InsertOneResult<Document>;
+
+      const user = await userCollection.findOne({ user: email });
+
+      if (user) {
+        result = await userCollection.updateOne(
+          { user: email, "wishlist.book": book },
+          { $set: { "wishlist.$.status": status } }
+        );
+
+        if (!result.matchedCount) {
+          result = await userCollection.updateOne(
+            { user: email, "wishlist.book": { $ne: book } },
+            { $addToSet: { wishlist: req.body } }
+          );
+        }
+      } else {
+        result = await userCollection.insertOne({
+          user: email,
+          wishlist: [req.body],
+        });
+      }
+
+      res.json(result);
     });
   } finally {
   }
