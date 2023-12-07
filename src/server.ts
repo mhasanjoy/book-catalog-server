@@ -30,7 +30,7 @@ async function run() {
     // Database Collection
     const db: Db = client.db(DATABASE_NAME);
     const bookCollection = db.collection("books");
-    const userCollection = db.collection("users");
+    const wishlistCollection = db.collection("wishlist");
 
     // API endpoints
     app.post("/books", async (req: Request, res: Response) => {
@@ -148,33 +148,48 @@ async function run() {
       }
     });
 
-    app.post("/users/:email", async (req, res) => {
+    app.post("/users/:email/wishlist", async (req, res) => {
       const { email } = req.params;
       const { book, status } = req.body;
       let result: UpdateResult<Document> | InsertOneResult<Document>;
 
-      const user = await userCollection.findOne({ user: email });
+      const user = await wishlistCollection.findOne({ user: email });
 
       if (user) {
-        result = await userCollection.updateOne(
+        result = await wishlistCollection.updateOne(
           { user: email, "wishlist.book": book },
           { $set: { "wishlist.$.status": status } }
         );
 
         if (!result.matchedCount) {
-          result = await userCollection.updateOne(
+          result = await wishlistCollection.updateOne(
             { user: email, "wishlist.book": { $ne: book } },
             { $addToSet: { wishlist: req.body } }
           );
         }
       } else {
-        result = await userCollection.insertOne({
+        result = await wishlistCollection.insertOne({
           user: email,
           wishlist: [req.body],
         });
       }
 
       res.json(result);
+    });
+
+    app.get("/users/:email/status/:bookId", async (req, res) => {
+      const { email, bookId } = req.params;
+
+      const result = await wishlistCollection.findOne(
+        { user: email, "wishlist.book": bookId },
+        { projection: { _id: 0, "wishlist.status": 1 } }
+      );
+
+      if (result) {
+        res.json(result.wishlist[0].status);
+      } else {
+        res.status(404).json({ error: "Book status not found" });
+      }
     });
   } finally {
   }
