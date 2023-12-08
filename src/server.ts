@@ -157,20 +157,25 @@ async function run() {
 
       if (user) {
         result = await wishlistCollection.updateOne(
-          { user: email, "wishlist.book": book },
+          { user: email, "wishlist.book": new ObjectId(book) },
           { $set: { "wishlist.$.status": status } }
         );
 
         if (!result.matchedCount) {
           result = await wishlistCollection.updateOne(
-            { user: email, "wishlist.book": { $ne: book } },
-            { $addToSet: { wishlist: req.body } }
+            { user: email, "wishlist.book": { $ne: new ObjectId(book) } },
+            { $addToSet: { wishlist: { book: new ObjectId(book), status } } }
           );
         }
       } else {
         result = await wishlistCollection.insertOne({
           user: email,
-          wishlist: [req.body],
+          wishlist: [
+            {
+              book: new ObjectId(book),
+              status,
+            },
+          ],
         });
       }
 
@@ -180,16 +185,67 @@ async function run() {
     app.get("/users/:email/status/:bookId", async (req, res) => {
       const { email, bookId } = req.params;
 
-      const result = await wishlistCollection.findOne(
-        { user: email, "wishlist.book": bookId },
-        { projection: { _id: 0, "wishlist.status": 1 } }
-      );
+      const wishlist = await wishlistCollection.findOne({ user: email, "wishlist.book": new ObjectId(bookId) });
 
-      if (result) {
-        res.json(result.wishlist[0].status);
+      if (wishlist) {
+        const result = wishlist.wishlist.find(
+          (list: { book: ObjectId; status: string }) => list.book.toString() === bookId
+        );
+
+        res.json(result.status);
       } else {
         res.status(404).json({ error: "Book status not found" });
       }
+    });
+
+    app.get("/users/:email/wishlist", async (req, res) => {
+      const { email } = req.params;
+
+      const wishlist = wishlistCollection.aggregate([
+        {
+          $match: {
+            user: email,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            wishlist: 1,
+          },
+        },
+        {
+          $unwind: "$wishlist",
+        },
+        {
+          $lookup: {
+            from: "books",
+            localField: "wishlist.book",
+            foreignField: "_id",
+            as: "wishlist.book",
+          },
+        },
+        {
+          $unwind: "$wishlist.book",
+        },
+        {
+          $group: {
+            _id: "$_id",
+            wishlist: {
+              $push: "$wishlist",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            wishlist: 1,
+          },
+        },
+      ]);
+
+      const result = await wishlist.toArray();
+
+      res.json(result[0]);
     });
   } finally {
   }
