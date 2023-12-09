@@ -229,7 +229,7 @@ async function run() {
         },
         {
           $group: {
-            _id: "$_id",
+            _id: null,
             wishlist: {
               $push: "$wishlist",
             },
@@ -246,6 +246,41 @@ async function run() {
       const result = await wishlist.toArray();
 
       res.json(result[0]);
+    });
+
+    app.delete("/users/:email/wishlist/:bookId", async (req, res) => {
+      const { email, bookId } = req.params;
+
+      const wishlist = wishlistCollection.aggregate([
+        {
+          $match: {
+            user: email,
+          },
+        },
+        {
+          $project: {
+            wishlist: {
+              $filter: {
+                input: "$wishlist",
+                as: "list",
+                cond: { $ne: ["$$list.book", new ObjectId(bookId)] },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            wishlist: "$wishlist",
+          },
+        },
+        {
+          $merge: "wishlist",
+        },
+      ]);
+
+      const result = await wishlist.toArray();
+
+      res.json(result);
     });
   } finally {
   }
