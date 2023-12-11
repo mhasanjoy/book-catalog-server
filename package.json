@@ -2,15 +2,15 @@
   "name": "book-catalog-server",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/server.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "dev": "tsnd --respawn ./src/server.ts",
-    "start": "node ./dist/server.js",
+    "dev": "tsnd --respawn src/server.ts",
+    "start": "node dist/server.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Md. Mehedi Hasan",
   "license": "ISC",
   "devDependencies": {
     "@types/cors": "^2.8.14",
