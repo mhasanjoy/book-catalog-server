@@ -21,7 +21,7 @@ Filtering routes of Books
 /books?search=James (GET)
 ```
 
-### Reviews for Book
+### Reviews of Books
 
 ```
 /reviews/6576595be2e1fe602fc13c42 (POST)
@@ -38,3 +38,5 @@ Filtering routes of Books
 ```
 
 ## [Live Site](https://book-catalog-server-mhasanjoy.vercel.app/)
+
+## [Client](https://book-catalog-524b1.web.app/)
